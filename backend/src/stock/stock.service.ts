@@ -73,25 +73,25 @@ export class StockService {
       await queryRunner.release();
     }
   }
-}
-  
   /**
    * Alertas de Quiebre de Stock (Stock vs MinStock)
    * En produccion esto seria un PostgreSQL View, se simplifica para MVP de calculo en memoria base.
    */
-  async getLowStockWarnings() {
-      // Optimizacion: Para requerimiento complejo sum(in)-sum(out) vs Product.min_stock
-      const query = `
-        WITH stock_status AS (
-          SELECT
-              p.id, p.name, p.min_stock,
-              COALESCE(SUM(CASE WHEN sm.target_warehouse_id IS NOT NULL THEN sm.quantity ELSE 0 END), 0) -
-              COALESCE(SUM(CASE WHEN sm.source_warehouse_id IS NOT NULL THEN sm.quantity ELSE 0 END), 0) as current_stock
-          FROM products p
-          LEFT JOIN stock_movements sm ON sm.product_id = p.id
-          GROUP BY p.id
-        )
-        SELECT * FROM stock_status WHERE current_stock < min_stock
-      `;
+    async getLowStockWarnings() {
+        // Optimizacion: Para requerimiento complejo sum(in)-sum(out) vs Product.min_stock
+        const query = `
+          WITH stock_status AS (
+            SELECT
+                p.id, p.name, p.min_stock,
+                COALESCE(SUM(CASE WHEN sm.target_warehouse_id IS NOT NULL THEN sm.quantity ELSE 0 END), 0) -
+                COALESCE(SUM(CASE WHEN sm.source_warehouse_id IS NOT NULL THEN sm.quantity ELSE 0 END), 0) as current_stock
+            FROM products p
+            LEFT JOIN stock_movements sm ON sm.product_id = p.id
+            GROUP BY p.id
+          )
+          SELECT * FROM stock_status WHERE current_stock < min_stock
+        `;
       return await this.dataSource.query(query);
   }
+
+}

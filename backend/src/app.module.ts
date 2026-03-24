@@ -3,6 +3,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AuthModule } from './auth/auth.module';
+import { CategoriesModule } from './categories/categories.module';
+import { WarehousesModule } from './warehouses/warehouses.module';
+import { ProductsModule } from './products/products.module';
 import { StockModule } from './stock/stock.module';
 import { AppService } from './app.service';
 import { User } from './entities/user.entity';
@@ -11,11 +14,17 @@ import { Category } from './entities/category.entity';
 import { Warehouse } from './entities/warehouse.entity';
 import { Product } from './entities/product.entity';
 import { StockMovement } from './entities/stock-movement.entity';
+import { ProductsModule } from './products/products.module';
+import { WarehousesModule } from './warehouses/warehouses.module';
+import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
     StockModule,
     AuthModule,
+    CategoriesModule,
+    WarehousesModule,
+    ProductsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -23,7 +32,10 @@ import { StockMovement } from './entities/stock-movement.entity';
     TypeOrmModule.forRootAsync({
       imports: [
     StockModule,
-    AuthModule,ConfigModule],
+    AuthModule,
+    CategoriesModule,
+    WarehousesModule,
+    ProductsModule,ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
@@ -37,6 +49,9 @@ import { StockMovement } from './entities/stock-movement.entity';
         logging: true,
       }),
     }),
+    ProductsModule,
+    WarehousesModule,
+    CategoriesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
