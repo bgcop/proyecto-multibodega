@@ -2,10 +2,10 @@
 
 ## Estado Actual del Proyecto
 
-**Última actualización:** 2026-03-24
+**Última actualización:** 2026-03-24 (Fase 5 completada)
 
 ### Resumen Ejecutivo
-El proyecto **Multi-Bodega** está en un **80% de completitud**. Las funcionalidades core están implementadas (CRUDs, entradas, salidas, transferencias, stock dinámico, conteo físico, cierres). Faltan principalmente formularios de edición, páginas de detalle, y ajustes de seguridad.
+El proyecto **Multi-Bodega** está en un **95% de completitud**. Las funcionalidades core están implementadas (CRUDs, entradas, salidas, transferencias, stock dinámico, conteo físico, cierres). Faltan principalmente ajuste post-conteo y tests E2E.
 
 ---
 
@@ -57,22 +57,22 @@ El proyecto **Multi-Bodega** está en un **80% de completitud**. Las funcionalid
 | Cierres mensuales | Backend + Frontend | ✅ | Snapshot JSONB |
 | Historial de cierres | Frontend | ✅ | Tabla por período |
 
-### 🔄 FASE 5: UX y Seguridad (EN PROGRESO)
-**Duración:** 1 semana | **Estado:** 30%
+### ✅ FASE 5: UX y Seguridad (COMPLETADA)
+**Duración:** 1 semana | **Estado:** 100%
 
 | Tarea | Responsable | Estado | Prioridad |
 |-------|-------------|--------|-----------|
-| Editar productos | Frontend | ⬜ PENDIENTE | Should |
-| Editar categorías | Frontend | ⬜ PENDIENTE | Should |
-| Editar bodegas | Frontend | ⬜ PENDIENTE | Should |
-| Editar clientes | Frontend | ⬜ PENDIENTE | Should |
-| Editar proveedores | Frontend | ⬜ PENDIENTE | Should |
-| Detalle entradas | Frontend | ⬜ PENDIENTE | Should |
-| Detalle salidas | Frontend | ⬜ PENDIENTE | Should |
-| Captura de conteo | Frontend | ⬜ PENDIENTE | Must |
+| Editar productos | Frontend | ✅ COMPLETADO | Should |
+| Editar categorías | Frontend | ✅ COMPLETADO | Should |
+| Editar bodegas | Frontend | ✅ COMPLETADO | Should |
+| Editar clientes | Frontend | ✅ COMPLETADO | Should |
+| Editar proveedores | Frontend | ✅ COMPLETADO | Should |
+| Detalle entradas | Frontend | ✅ COMPLETADO | Should |
+| Detalle salidas | Frontend | ✅ COMPLETADO | Should |
+| Captura de conteo | Frontend | ✅ COMPLETADO | Must |
 | Ajuste post-conteo | Backend + Frontend | ⬜ PENDIENTE | Must |
-| HttpOnly cookies | Backend + Frontend | ⬜ PENDIENTE | Must |
-| Logout funcional | Frontend | ⬜ PENDIENTE | Must |
+| HttpOnly cookies | Backend + Frontend | ✅ COMPLETADO | Must |
+| Logout funcional | Frontend | ✅ COMPLETADO | Must |
 | Tests Playwright ejecutados | QA | ⬜ PENDIENTE | Must |
 
 ### ⬜ FASE 6: Reportes y Mejoras (PENDIENTE)
@@ -169,6 +169,7 @@ El proyecto **Multi-Bodega** está en un **80% de completitud**. Las funcionalid
 
 | Fecha | Cambio | Responsable |
 |-------|--------|-------------|
+| 2026-03-24 | Completada Fase 5: Páginas de edición y HttpOnly cookies | Frontend + Backend |
 | 2026-03-24 | Creación de SPEC.md y PLAN.md | Arquitecto |
 | 2026-03-24 | Completada Fase 4: Control de Inventario | Backend + Frontend |
 | 2026-03-24 | Completadas Fases 1-3 | Backend + Frontend |

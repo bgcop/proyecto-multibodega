@@ -145,19 +145,37 @@ check_connection() {
 create_database() {
     echo -e "${YELLOW}Creando base de datos '$DB_NAME'...${NC}"
     
-    if PGPASSWORD="$DB_PASS" psql \
-        -h "$DB_HOST" \
-        -p "$DB_PORT" \
-        -U "$DB_USER" \
-        -d "postgres" \
-        -c "CREATE DATABASE $DB_NAME;" \
-        --quiet \
-        --no-password > /dev/null 2>&1; then
-        echo -e "${GREEN}✓ Base de datos creada${NC}"
-        return 0
+    if [ "$PSQL_CMD" = "psql" ]; then
+        if PGPASSWORD="$DB_PASS" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "postgres" \
+            -c "CREATE DATABASE $DB_NAME;" \
+            --quiet \
+            --no-password > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ Base de datos creada${NC}"
+            return 0
+        else
+            echo -e "${YELLOW}La base de datos ya existe, continuando...${NC}"
+            return 0
+        fi
     else
-        echo -e "${YELLOW}La base de datos ya existe, continuando...${NC}"
-        return 0
+        # Usar docker exec
+        if docker exec "$DB_CONTAINER" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "postgres" \
+            -c "CREATE DATABASE $DB_NAME;" \
+            --quiet \
+            --no-password > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ Base de datos creada${NC}"
+            return 0
+        else
+            echo -e "${YELLOW}La base de datos ya existe, continuando...${NC}"
+            return 0
+        fi
     fi
 }
 
@@ -166,30 +184,58 @@ drop_database() {
     echo -e "${YELLOW}Eliminando base de datos '$DB_NAME'...${NC}"
     
     # Terminar conexiones activas primero
-    PGPASSWORD="$DB_PASS" psql \
-        -h "$DB_HOST" \
-        -p "$DB_PORT" \
-        -U "$DB_USER" \
-        -d "postgres" \
-        -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();" \
-        --quiet \
-        --no-password > /dev/null 2>&1
+    if [ "$PSQL_CMD" = "psql" ]; then
+        PGPASSWORD="$DB_PASS" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "postgres" \
+            -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();" \
+            --quiet \
+            --no-password > /dev/null 2>&1
+    else
+        docker exec "$DB_CONTAINER" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "postgres" \
+            -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$DB_NAME' AND pid <> pg_backend_pid();" \
+            --quiet \
+            --no-password > /dev/null 2>&1
+    fi
     
     sleep 1
     
-    if PGPASSWORD="$DB_PASS" psql \
-        -h "$DB_HOST" \
-        -p "$DB_PORT" \
-        -U "$DB_USER" \
-        -d "postgres" \
-        -c "DROP DATABASE IF EXISTS $DB_NAME;" \
-        --quiet \
-        --no-password > /dev/null 2>&1; then
-        echo -e "${GREEN}✓ Base de datos eliminada${NC}"
-        return 0
+    if [ "$PSQL_CMD" = "psql" ]; then
+        if PGPASSWORD="$DB_PASS" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "postgres" \
+            -c "DROP DATABASE IF EXISTS $DB_NAME;" \
+            --quiet \
+            --no-password > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ Base de datos eliminada${NC}"
+            return 0
+        else
+            echo -e "${RED}✗ Error al eliminar base de datos${NC}"
+            return 1
+        fi
     else
-        echo -e "${RED}✗ Error al eliminar base de datos${NC}"
-        return 1
+        if docker exec "$DB_CONTAINER" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "postgres" \
+            -c "DROP DATABASE IF EXISTS $DB_NAME;" \
+            --quiet \
+            --no-password > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ Base de datos eliminada${NC}"
+            return 0
+        else
+            echo -e "${RED}✗ Error al eliminar base de datos${NC}"
+            return 1
+        fi
     fi
 }
 
@@ -197,29 +243,53 @@ drop_database() {
 validate_tables() {
     echo -e "${YELLOW}Validando tablas creadas...${NC}"
     
-    local table_count=$(PGPASSWORD="$DB_PASS" psql \
-        -h "$DB_HOST" \
-        -p "$DB_PORT" \
-        -U "$DB_USER" \
-        -d "$DB_NAME" \
-        -t \
-        -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" \
-        --quiet \
-        --no-password | tr -d '[:space:]')
+    local table_count
+    if [ "$PSQL_CMD" = "psql" ]; then
+        table_count=$(PGPASSWORD="$DB_PASS" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "$DB_NAME" \
+            -t \
+            -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" \
+            --quiet \
+            --no-password | tr -d '[:space:]')
+    else
+        table_count=$(docker exec "$DB_CONTAINER" psql \
+            -h "$DB_HOST" \
+            -p "$DB_PORT" \
+            -U "$DB_USER" \
+            -d "$DB_NAME" \
+            -t \
+            -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public';" \
+            --quiet \
+            --no-password | tr -d '[:space:]')
+    fi
     
     if [ "$table_count" -ge 16 ]; then
         echo -e "${GREEN}✓ $table_count tablas creadas (esperado: 16+)${NC}"
         
         # Listar tablas
         echo -e "${YELLOW}Tablas en la base de datos:${NC}"
-        PGPASSWORD="$DB_PASS" psql \
-            -h "$DB_HOST" \
-            -p "$DB_PORT" \
-            -U "$DB_USER" \
-            -d "$DB_NAME" \
-            -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;" \
-            --quiet \
-            --no-password
+        if [ "$PSQL_CMD" = "psql" ]; then
+            PGPASSWORD="$DB_PASS" psql \
+                -h "$DB_HOST" \
+                -p "$DB_PORT" \
+                -U "$DB_USER" \
+                -d "$DB_NAME" \
+                -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;" \
+                --quiet \
+                --no-password
+        else
+            docker exec "$DB_CONTAINER" psql \
+                -h "$DB_HOST" \
+                -p "$DB_PORT" \
+                -U "$DB_USER" \
+                -d "$DB_NAME" \
+                -c "SELECT table_name FROM information_schema.tables WHERE table_schema = 'public' ORDER BY table_name;" \
+                --quiet \
+                --no-password
+        fi
         return 0
     else
         echo -e "${RED}✗ Solo se crearon $table_count tablas (esperado: 16+)${NC}"
