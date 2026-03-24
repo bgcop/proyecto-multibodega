@@ -1,5 +1,5 @@
-import { Controller, Post, Body, Get, UseGuards, Req } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Post, Body, Get, UseGuards, Req, Res } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -8,8 +8,32 @@ export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('login')
-  login(@Body() body: any) {
-    return this.authService.signIn(body.email, body.password);
+  async login(@Body() body: any, @Res({ passthrough: true }) res: Response) {
+    const result = await this.authService.signIn(body.email, body.password);
+    
+    // Set HttpOnly cookie with JWT
+    res.cookie('jwt', result.access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: '/',
+    });
+    
+    return { message: 'Login successful', user: result.user };
+  }
+
+  @Post('logout')
+  async logout(@Res({ passthrough: true }) res: Response) {
+    // Clear the HttpOnly cookie
+    res.clearCookie('jwt', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/',
+    });
+    
+    return { message: 'Logout successful' };
   }
 
   @Post('seed')

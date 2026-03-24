@@ -53,6 +53,7 @@ export default function EntradasPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Proveedor</th>
                 <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase">Valor Total</th>
                 <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -62,11 +63,19 @@ export default function EntradasPage() {
                   <td className="px-6 py-4 text-slate-500">{new Date(e.entry_date).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-slate-800">{e.warehouse?.name}</td>
                   <td className="px-6 py-4 text-slate-500">{e.supplier?.name || "-"}</td>
-                  <td className="px-6 py-4 text-right font-semibold text-slate-800">\${e.total_value?.toLocaleString() || "0"}</td>
+                  <td className="px-6 py-4 text-right font-semibold text-slate-800">${e.total_value?.toLocaleString() || "0"}</td>
                   <td className="px-6 py-4 text-center">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${e.status === 'COMPLETED' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
                       {e.status === 'COMPLETED' ? '✓ Completado' : '⏳ Pendiente'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <Link 
+                      href={`/entradas/${e.id}`}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Ver Detalle
+                    </Link>
                   </td>
                 </tr>
               ))}

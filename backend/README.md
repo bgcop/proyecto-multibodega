@@ -31,6 +31,74 @@
 $ npm install
 ```
 
+## Database Setup
+
+This project uses PostgreSQL 15+. A Docker container is recommended for development.
+
+### 1. Start PostgreSQL Database
+
+```bash
+# Using Docker (recommended)
+docker run --name multibodega-db \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_DB=multibodega \
+  -p 5432:5432 \
+  -d postgres:15
+```
+
+### 2. Initialize Database Schema and Seed Data
+
+Run the initialization script to create all tables and insert sample data:
+
+```bash
+cd database
+chmod +x init-db.sh
+./init-db.sh
+```
+
+Or with `--reset` flag to recreate the database:
+
+```bash
+./init-db.sh --reset
+```
+
+### 3. Environment Configuration
+
+Create `.env` file in the project root (or copy `.env.example`):
+
+```bash
+# Database
+DB_HOST=localhost
+DB_PORT=5432
+DB_USERNAME=postgres
+DB_PASSWORD=postgres
+DB_DATABASE=multibodega
+
+# JWT
+JWT_SECRET=supersecretkeychangeinproduction
+JWT_EXPIRATION=3600s
+
+# App
+PORT=3000
+NODE_ENV=development
+```
+
+### 4. Database Schema Overview
+
+The database includes 16 tables:
+- **Core**: `users`, `roles`
+- **Catalog**: `categories`, `products`, `units_of_measure`
+- **Warehouses**: `warehouses`, `stock_movements`
+- **Partners**: `customers`, `suppliers`
+- **Transactions**: `inventory_entries`, `inventory_entry_items`, `inventory_exits`, `inventory_exit_items`
+- **Inventory Control**: `physical_counts`, `physical_count_items`, `inventory_closures`
+
+### 5. Default Admin User
+
+After seeding:
+- **Email**: `admin@sistema.local`
+- **Password**: `Admin123!`
+
 ## Compile and run the project
 
 ```bash

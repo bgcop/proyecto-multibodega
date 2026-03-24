@@ -1,12 +1,9 @@
 -- ============================================================================
--- MULTI-BODEGA - Script de Inicialización de Base de Datos
--- PostgreSQL 14+
--- ============================================================================
--- Ejecutar: psql -U postgres -d multibodega -f 01-schema.sql
+-- Script de Esquema - Proyecto Multi-Bodega
+-- PostgreSQL 15+
 -- ============================================================================
 
--- Limpiar tablas existentes (¡CUIDADO EN PRODUCCIÓN!)
-DROP TABLE IF EXISTS inventory_closure_items CASCADE;
+-- Eliminar tablas en orden inverso de dependencias (si existen)
 DROP TABLE IF EXISTS inventory_closures CASCADE;
 DROP TABLE IF EXISTS physical_count_items CASCADE;
 DROP TABLE IF EXISTS physical_counts CASCADE;
@@ -15,385 +12,351 @@ DROP TABLE IF EXISTS inventory_exits CASCADE;
 DROP TABLE IF EXISTS inventory_entry_items CASCADE;
 DROP TABLE IF EXISTS inventory_entries CASCADE;
 DROP TABLE IF EXISTS stock_movements CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS roles CASCADE;
+DROP TABLE IF EXISTS customers CASCADE;
+DROP TABLE IF EXISTS suppliers CASCADE;
 DROP TABLE IF EXISTS products CASCADE;
 DROP TABLE IF EXISTS categories CASCADE;
 DROP TABLE IF EXISTS units_of_measure CASCADE;
 DROP TABLE IF EXISTS warehouses CASCADE;
-DROP TABLE IF EXISTS customers CASCADE;
-DROP TABLE IF EXISTS suppliers CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
-DROP TABLE IF EXISTS roles CASCADE;
+
+-- Eliminar tipos ENUM si existen (PostgreSQL no tiene DROP TYPE IF EXISTS CASCADE, manejaremos con CREATE TYPE)
+-- No se eliminan, se crean si no existen.
 
 -- ============================================================================
--- TIPOS ENUM
+-- Crear tipos ENUM
 -- ============================================================================
 
--- Tipo de movimiento de stock
-DO $$ BEGIN
-    CREATE TYPE stock_movement_type AS ENUM ('IN', 'OUT', 'TRANSFER');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+-- Tipo para movimiento de stock
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'stockmovementtype') THEN
+        CREATE TYPE stockmovementtype AS ENUM ('IN', 'OUT', 'TRANSFER');
+    END IF;
+END$$;
 
--- Tipo de role
-DO $$ BEGIN
-    CREATE TYPE role_name AS ENUM ('Admin', 'Warehouse_Manager', 'Viewer');
-EXCEPTION
-    WHEN duplicate_object THEN null;
-END $$;
+-- Tipo para estado de entradas/salidas
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'entry_exit_status') THEN
+        CREATE TYPE entry_exit_status AS ENUM ('PENDING', 'COMPLETED', 'CANCELLED');
+    END IF;
+END$$;
+
+-- Tipo para estado de conteo físico
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'count_status') THEN
+        CREATE TYPE count_status AS ENUM ('IN_PROGRESS', 'COMPLETED', 'CANCELLED');
+    END IF;
+END$$;
+
+-- Tipo para nombre de rol
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'rolename') THEN
+        CREATE TYPE rolename AS ENUM ('Admin', 'Warehouse_Manager', 'Viewer');
+    END IF;
+END$$;
 
 -- ============================================================================
--- TABLAS BASE
+-- Crear tablas
 -- ============================================================================
 
--- Roles de usuario
+-- Tabla: roles
 CREATE TABLE roles (
     id SERIAL PRIMARY KEY,
-    name role_name NOT NULL DEFAULT 'Viewer',
+    name rolename NOT NULL DEFAULT 'Viewer',
     permissions TEXT[],
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Usuarios del sistema
+-- Tabla: users
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
-    email VARCHAR(255) NOT NULL UNIQUE,
+    email VARCHAR(255) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     name VARCHAR(255),
-    role_id INTEGER NOT NULL REFERENCES roles(id) ON DELETE RESTRICT,
+    role_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (role_id) REFERENCES roles(id) ON DELETE RESTRICT
 );
 
--- Categorías de productos (jerárquicas)
+-- Tabla: categories (auto-referencial)
 CREATE TABLE categories (
     id SERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL UNIQUE,
+    name VARCHAR(255) NOT NULL,
     description TEXT,
-    parent_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
+    parent_id INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_id) REFERENCES categories(id) ON DELETE CASCADE
 );
 
--- Unidades de medida
+-- Tabla: units_of_measure
 CREATE TABLE units_of_measure (
     id SERIAL PRIMARY KEY,
-    code VARCHAR(10) NOT NULL UNIQUE,
+    code VARCHAR(10) UNIQUE NOT NULL,
     name VARCHAR(100) NOT NULL,
-    symbol VARCHAR(10) NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    symbol VARCHAR(10),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Bodegas/Almacenes
+-- Tabla: warehouses
 CREATE TABLE warehouses (
     id SERIAL PRIMARY KEY,
-    code VARCHAR(10) NOT NULL UNIQUE,
+    code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     address TEXT,
-    is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Productos
+-- Tabla: products
 CREATE TABLE products (
     id SERIAL PRIMARY KEY,
-    sku VARCHAR(50) NOT NULL UNIQUE,
+    sku VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT,
-    price DECIMAL(10, 2) NOT NULL DEFAULT 0,
+    price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
     image_url VARCHAR(500),
-    min_stock INTEGER DEFAULT 0,
-    category_id INTEGER REFERENCES categories(id) ON DELETE SET NULL,
-    unit_id INTEGER REFERENCES units_of_measure(id) ON DELETE SET NULL,
-    is_active BOOLEAN DEFAULT TRUE,
+    min_stock INTEGER NOT NULL DEFAULT 0,
+    category_id INTEGER,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE SET NULL
 );
 
--- Clientes
+-- Tabla: customers
 CREATE TABLE customers (
     id SERIAL PRIMARY KEY,
-    code VARCHAR(20) NOT NULL UNIQUE,
+    code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
-    tax_id VARCHAR(20),
+    tax_id VARCHAR(50),
     email VARCHAR(255),
     phone VARCHAR(50),
     address TEXT,
-    notes TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- Proveedores
+-- Tabla: suppliers
 CREATE TABLE suppliers (
     id SERIAL PRIMARY KEY,
-    code VARCHAR(20) NOT NULL UNIQUE,
+    code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
-    tax_id VARCHAR(20),
+    tax_id VARCHAR(50),
     contact_name VARCHAR(255),
     email VARCHAR(255),
     phone VARCHAR(50),
     address TEXT,
-    notes TEXT,
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================================================
--- MOVIMIENTOS DE STOCK
--- ============================================================================
-
--- Movimientos de stock (tabla central para cálculo dinámico)
+-- Tabla: stock_movements
 CREATE TABLE stock_movements (
     id SERIAL PRIMARY KEY,
-    type stock_movement_type NOT NULL,
-    quantity DECIMAL(10, 3) NOT NULL,
+    type stockmovementtype NOT NULL,
+    quantity DECIMAL(10,3) NOT NULL CHECK (quantity > 0),
     reason TEXT,
     date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    reference VARCHAR(50),
-    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
-    source_warehouse_id INTEGER REFERENCES warehouses(id) ON DELETE SET NULL,
-    target_warehouse_id INTEGER REFERENCES warehouses(id) ON DELETE SET NULL,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================================================
--- ENTRADAS DE INVENTARIO
--- ============================================================================
-
--- Entradas de inventario
-CREATE TABLE inventory_entries (
-    id SERIAL PRIMARY KEY,
-    reference VARCHAR(50) NOT NULL UNIQUE,
-    warehouse_id INTEGER NOT NULL REFERENCES warehouses(id),
-    supplier_id INTEGER REFERENCES suppliers(id),
-    entry_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    total_value DECIMAL(12, 2) DEFAULT 0,
-    notes TEXT,
-    status VARCHAR(20) DEFAULT 'completed',
-    user_id INTEGER NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Items de entrada
-CREATE TABLE inventory_entry_items (
-    id SERIAL PRIMARY KEY,
-    entry_id INTEGER NOT NULL REFERENCES inventory_entries(id) ON DELETE CASCADE,
-    product_id INTEGER NOT NULL REFERENCES products(id),
-    quantity DECIMAL(10, 3) NOT NULL,
-    unit_cost DECIMAL(10, 2) NOT NULL,
-    subtotal DECIMAL(12, 2) NOT NULL,
-    notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================================================
--- SALIDAS DE INVENTARIO
--- ============================================================================
-
--- Salidas de inventario
-CREATE TABLE inventory_exits (
-    id SERIAL PRIMARY KEY,
-    reference VARCHAR(50) NOT NULL UNIQUE,
-    warehouse_id INTEGER NOT NULL REFERENCES warehouses(id),
-    customer_id INTEGER REFERENCES customers(id),
-    exit_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    total_value DECIMAL(12, 2) DEFAULT 0,
-    notes TEXT,
-    status VARCHAR(20) DEFAULT 'completed',
-    user_id INTEGER NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Items de salida
-CREATE TABLE inventory_exit_items (
-    id SERIAL PRIMARY KEY,
-    exit_id INTEGER NOT NULL REFERENCES inventory_exits(id) ON DELETE CASCADE,
-    product_id INTEGER NOT NULL REFERENCES products(id),
-    quantity DECIMAL(10, 3) NOT NULL,
-    unit_price DECIMAL(10, 2) NOT NULL,
-    subtotal DECIMAL(12, 2) NOT NULL,
-    notes TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================================================
--- CONTEO FÍSICO
--- ============================================================================
-
--- Conteos físicos de inventario
-CREATE TABLE physical_counts (
-    id SERIAL PRIMARY KEY,
-    reference VARCHAR(50) NOT NULL UNIQUE,
-    warehouse_id INTEGER NOT NULL REFERENCES warehouses(id),
-    count_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    status VARCHAR(20) DEFAULT 'pending',
-    notes TEXT,
-    matched_items INTEGER DEFAULT 0,
-    mismatched_items INTEGER DEFAULT 0,
-    user_id INTEGER NOT NULL REFERENCES users(id),
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Items de conteo físico
-CREATE TABLE physical_count_items (
-    id SERIAL PRIMARY KEY,
-    physical_count_id INTEGER NOT NULL REFERENCES physical_counts(id) ON DELETE CASCADE,
-    product_id INTEGER NOT NULL REFERENCES products(id),
-    system_stock DECIMAL(10, 3) NOT NULL,
-    physical_stock DECIMAL(10, 3),
-    difference DECIMAL(10, 3),
-    notes TEXT,
-    counted_at TIMESTAMP,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- ============================================================================
--- CIERRES DE INVENTARIO
--- ============================================================================
-
--- Cierres mensuales de inventario
-CREATE TABLE inventory_closures (
-    id SERIAL PRIMARY KEY,
-    reference VARCHAR(50) NOT NULL UNIQUE,
-    warehouse_id INTEGER REFERENCES warehouses(id),
-    period_month INTEGER NOT NULL,
-    period_year INTEGER NOT NULL,
-    total_value DECIMAL(14, 2) DEFAULT 0,
-    total_products INTEGER DEFAULT 0,
-    snapshot JSONB,
-    notes TEXT,
-    user_id INTEGER NOT NULL REFERENCES users(id),
+    product_id INTEGER NOT NULL,
+    source_warehouse_id INTEGER,
+    target_warehouse_id INTEGER,
+    user_id INTEGER NOT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(warehouse_id, period_month, period_year)
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (source_warehouse_id) REFERENCES warehouses(id) ON DELETE SET NULL,
+    FOREIGN KEY (target_warehouse_id) REFERENCES warehouses(id) ON DELETE SET NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT
+);
+
+-- Tabla: inventory_entries
+CREATE TABLE inventory_entries (
+    id SERIAL PRIMARY KEY,
+    reference VARCHAR(100) UNIQUE NOT NULL,
+    warehouse_id INTEGER NOT NULL,
+    supplier_id INTEGER,
+    entry_date DATE NOT NULL,
+    notes TEXT,
+    status entry_exit_status NOT NULL DEFAULT 'PENDING',
+    total_value DECIMAL(12,2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL
+);
+
+-- Tabla: inventory_entry_items
+CREATE TABLE inventory_entry_items (
+    id SERIAL PRIMARY KEY,
+    entry_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_cost DECIMAL(12,2) NOT NULL CHECK (unit_cost >= 0),
+    subtotal DECIMAL(12,2) NOT NULL CHECK (subtotal >= 0),
+    FOREIGN KEY (entry_id) REFERENCES inventory_entries(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+);
+
+-- Tabla: inventory_exits
+CREATE TABLE inventory_exits (
+    id SERIAL PRIMARY KEY,
+    reference VARCHAR(100) UNIQUE NOT NULL,
+    warehouse_id INTEGER NOT NULL,
+    customer_id INTEGER,
+    exit_date DATE NOT NULL,
+    notes TEXT,
+    status entry_exit_status NOT NULL DEFAULT 'PENDING',
+    total_value DECIMAL(12,2) NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE,
+    FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE SET NULL
+);
+
+-- Tabla: inventory_exit_items
+CREATE TABLE inventory_exit_items (
+    id SERIAL PRIMARY KEY,
+    exit_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    quantity INTEGER NOT NULL CHECK (quantity > 0),
+    unit_price DECIMAL(12,2) NOT NULL CHECK (unit_price >= 0),
+    subtotal DECIMAL(12,2) NOT NULL CHECK (subtotal >= 0),
+    FOREIGN KEY (exit_id) REFERENCES inventory_exits(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+);
+
+-- Tabla: physical_counts
+CREATE TABLE physical_counts (
+    id SERIAL PRIMARY KEY,
+    reference VARCHAR(100) UNIQUE NOT NULL,
+    warehouse_id INTEGER NOT NULL,
+    count_date DATE NOT NULL,
+    status count_status NOT NULL DEFAULT 'IN_PROGRESS',
+    notes TEXT,
+    total_items INTEGER NOT NULL DEFAULT 0,
+    matched_items INTEGER NOT NULL DEFAULT 0,
+    mismatched_items INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE
+);
+
+-- Tabla: physical_count_items
+CREATE TABLE physical_count_items (
+    id SERIAL PRIMARY KEY,
+    count_id INTEGER NOT NULL,
+    product_id INTEGER NOT NULL,
+    system_stock INTEGER NOT NULL,
+    physical_stock INTEGER NOT NULL,
+    difference INTEGER NOT NULL,
+    notes TEXT,
+    FOREIGN KEY (count_id) REFERENCES physical_counts(id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE RESTRICT
+);
+
+-- Tabla: inventory_closures
+CREATE TABLE inventory_closures (
+    id SERIAL PRIMARY KEY,
+    reference VARCHAR(100) UNIQUE NOT NULL,
+    warehouse_id INTEGER NOT NULL,
+    closure_date DATE NOT NULL,
+    period_month INTEGER NOT NULL CHECK (period_month BETWEEN 1 AND 12),
+    period_year INTEGER NOT NULL CHECK (period_year >= 2020),
+    total_value DECIMAL(15,2) NOT NULL,
+    total_products INTEGER NOT NULL,
+    notes TEXT,
+    snapshot JSONB,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (warehouse_id) REFERENCES warehouses(id) ON DELETE CASCADE
 );
 
 -- ============================================================================
--- ÍNDICES PARA OPTIMIZACIÓN
+-- Índices para optimización
 -- ============================================================================
 
--- Stock movements
-CREATE INDEX idx_stock_movements_product ON stock_movements(product_id);
-CREATE INDEX idx_stock_movements_source ON stock_movements(source_warehouse_id);
-CREATE INDEX idx_stock_movements_target ON stock_movements(target_warehouse_id);
-CREATE INDEX idx_stock_movements_date ON stock_movements(date);
+-- Índices para stock_movements (según entidad TypeORM)
 CREATE INDEX idx_stock_movements_product_date ON stock_movements(product_id, date);
-CREATE INDEX idx_stock_movements_source_date ON stock_movements(source_warehouse_id, date);
-CREATE INDEX idx_stock_movements_target_date ON stock_movements(target_warehouse_id, date);
+CREATE INDEX idx_stock_movements_source_warehouse_date ON stock_movements(source_warehouse_id, date);
+CREATE INDEX idx_stock_movements_target_warehouse_date ON stock_movements(target_warehouse_id, date);
 
--- Products
-CREATE INDEX idx_products_category ON products(category_id);
+-- Índices para búsquedas frecuentes
 CREATE INDEX idx_products_sku ON products(sku);
-CREATE INDEX idx_products_active ON products(is_active);
+CREATE INDEX idx_products_category ON products(category_id);
+CREATE INDEX idx_customers_code ON customers(code);
+CREATE INDEX idx_suppliers_code ON suppliers(code);
+CREATE INDEX idx_warehouses_code ON warehouses(code);
+CREATE INDEX idx_inventory_entries_reference ON inventory_entries(reference);
+CREATE INDEX idx_inventory_exits_reference ON inventory_exits(reference);
+CREATE INDEX idx_physical_counts_reference ON physical_counts(reference);
+CREATE INDEX idx_inventory_closures_reference ON inventory_closures(reference);
 
--- Entries
-CREATE INDEX idx_entries_warehouse ON inventory_entries(warehouse_id);
-CREATE INDEX idx_entries_supplier ON inventory_entries(supplier_id);
-CREATE INDEX idx_entries_date ON inventory_entries(entry_date);
-CREATE INDEX idx_entry_items_product ON inventory_entry_items(product_id);
-
--- Exits
-CREATE INDEX idx_exits_warehouse ON inventory_exits(warehouse_id);
-CREATE INDEX idx_exits_customer ON inventory_exits(customer_id);
-CREATE INDEX idx_exits_date ON inventory_exits(exit_date);
-CREATE INDEX idx_exit_items_product ON inventory_exit_items(product_id);
-
--- Physical counts
-CREATE INDEX idx_physical_counts_warehouse ON physical_counts(warehouse_id);
+-- Índices para fechas
+CREATE INDEX idx_inventory_entries_date ON inventory_entries(entry_date);
+CREATE INDEX idx_inventory_exits_date ON inventory_exits(exit_date);
 CREATE INDEX idx_physical_counts_date ON physical_counts(count_date);
-CREATE INDEX idx_physical_count_items_count ON physical_count_items(physical_count_id);
-
--- Closures
-CREATE INDEX idx_closures_warehouse ON inventory_closures(warehouse_id);
-CREATE INDEX idx_closures_period ON inventory_closures(period_year, period_month);
+CREATE INDEX idx_inventory_closures_date ON inventory_closures(closure_date);
 
 -- ============================================================================
--- FUNCIONES ÚTILES
+-- Triggers para actualizar timestamps updated_at
 -- ============================================================================
 
--- Función para calcular stock actual
-CREATE OR REPLACE FUNCTION calculate_stock(
-    p_product_id INTEGER,
-    p_warehouse_id INTEGER DEFAULT NULL
-) RETURNS DECIMAL(10, 3) AS $$
-DECLARE
-    total_stock DECIMAL(10, 3);
-BEGIN
-    SELECT COALESCE(SUM(
-        CASE 
-            WHEN p_warehouse_id IS NULL THEN
-                CASE 
-                    WHEN type = 'IN' THEN quantity
-                    WHEN type = 'OUT' THEN -quantity
-                    ELSE 0
-                END
-            ELSE
-                CASE 
-                    WHEN type = 'IN' AND target_warehouse_id = p_warehouse_id THEN quantity
-                    WHEN type = 'OUT' AND source_warehouse_id = p_warehouse_id THEN -quantity
-                    WHEN type = 'TRANSFER' AND target_warehouse_id = p_warehouse_id THEN quantity
-                    WHEN type = 'TRANSFER' AND source_warehouse_id = p_warehouse_id THEN -quantity
-                    ELSE 0
-                END
-        END
-    ), 0) INTO total_stock
-    FROM stock_movements
-    WHERE product_id = p_product_id
-    AND (p_warehouse_id IS NULL OR source_warehouse_id = p_warehouse_id OR target_warehouse_id = p_warehouse_id);
-    
-    RETURN total_stock;
-END;
-$$ LANGUAGE plpgsql;
-
--- Función para actualizar timestamps
+-- Función para actualizar updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
     NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ language 'plpgsql';
 
--- Triggers para updated_at
-CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_warehouses_updated_at BEFORE UPDATE ON warehouses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_suppliers_updated_at BEFORE UPDATE ON suppliers FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_stock_movements_updated_at BEFORE UPDATE ON stock_movements FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_entries_updated_at BEFORE UPDATE ON inventory_entries FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_exits_updated_at BEFORE UPDATE ON inventory_exits FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_physical_counts_updated_at BEFORE UPDATE ON physical_counts FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_closures_updated_at BEFORE UPDATE ON inventory_closures FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+-- Triggers para tablas con updated_at
+CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_roles_updated_at BEFORE UPDATE ON roles
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_categories_updated_at BEFORE UPDATE ON categories
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_warehouses_updated_at BEFORE UPDATE ON warehouses
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_products_updated_at BEFORE UPDATE ON products
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_customers_updated_at BEFORE UPDATE ON customers
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_suppliers_updated_at BEFORE UPDATE ON suppliers
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- ============================================================================
--- FINALIZACIÓN
+-- Comentarios descriptivos
 -- ============================================================================
 
--- Confirmar creación
+COMMENT ON TABLE roles IS 'Roles de usuario del sistema';
+COMMENT ON TABLE users IS 'Usuarios del sistema con autenticación';
+COMMENT ON TABLE categories IS 'Categorías de productos con relación jerárquica';
+COMMENT ON TABLE units_of_measure IS 'Unidades de medida para productos';
+COMMENT ON TABLE warehouses IS 'Bodegas de almacenamiento';
+COMMENT ON TABLE products IS 'Productos del inventario';
+COMMENT ON TABLE customers IS 'Clientes para salidas de inventario';
+COMMENT ON TABLE suppliers IS 'Proveedores para entradas de inventario';
+COMMENT ON TABLE stock_movements IS 'Movimientos de stock (entradas, salidas, transferencias)';
+COMMENT ON TABLE inventory_entries IS 'Entradas de inventario (compras, ajustes positivos)';
+COMMENT ON TABLE inventory_entry_items IS 'Items de entrada de inventario';
+COMMENT ON TABLE inventory_exits IS 'Salidas de inventario (ventas, ajustes negativos)';
+COMMENT ON TABLE inventory_exit_items IS 'Items de salida de inventario';
+COMMENT ON TABLE physical_counts IS 'Conteos físicos de inventario';
+COMMENT ON TABLE physical_count_items IS 'Items de conteo físico';
+COMMENT ON TABLE inventory_closures IS 'Cierres de inventario mensuales';
+
+-- ============================================================================
+-- Mensaje de éxito
+-- ============================================================================
+
 DO $$
-DECLARE
-    table_count INTEGER;
 BEGIN
-    SELECT count(*) INTO table_count 
-    FROM information_schema.tables 
-    WHERE table_schema = 'public' AND table_type = 'BASE TABLE';
-    
-    RAISE NOTICE '================================================';
-    RAISE NOTICE 'Schema creado exitosamente';
-    RAISE NOTICE 'Tablas creadas: %', table_count;
-    RAISE NOTICE '================================================';
+    RAISE NOTICE 'Esquema creado exitosamente. 16 tablas disponibles.';
 END $$;

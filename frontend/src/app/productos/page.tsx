@@ -19,8 +19,8 @@ export default function ProductosPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch(\`http://localhost:3000/api/products?page=\${page}&limit=10\`, {
-      headers: token ? { Authorization: \`Bearer \${token}\` } : {},
+    fetch(`http://localhost:3000/api/products?page=${page}&limit=10`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((res) => res.json())
       .then((data) => {
@@ -48,21 +48,30 @@ export default function ProductosPage() {
               <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Categoría</th>
               <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Precio</th>
               <th className="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Stock Mín</th>
+              <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">Cargando...</td></tr>
+              <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-500">Cargando...</td></tr>
             ) : products.length === 0 ? (
-              <tr><td colSpan={5} className="px-6 py-8 text-center text-slate-500">No hay productos registrados</td></tr>
+              <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-500">No hay productos registrados</td></tr>
             ) : (
               products.map((p) => (
                 <tr key={p.id} className="hover:bg-slate-50 transition-colors">
                   <td className="px-6 py-4 text-sm font-mono text-blue-600">{p.sku}</td>
                   <td className="px-6 py-4 text-sm font-medium text-slate-800">{p.name}</td>
                   <td className="px-6 py-4 text-sm text-slate-500">{p.category?.name || "-"}</td>
-                  <td className="px-6 py-4 text-sm text-right font-semibold text-slate-700">\${p.price.toFixed(2)}</td>
+                  <td className="px-6 py-4 text-sm text-right font-semibold text-slate-700">${p.price.toFixed(2)}</td>
                   <td className="px-6 py-4 text-sm text-right text-slate-500">{p.minStock}</td>
+                  <td className="px-6 py-4 text-center">
+                    <Link 
+                      href={`/productos/${p.id}/editar`}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Editar
+                    </Link>
+                  </td>
                 </tr>
               ))
             )}

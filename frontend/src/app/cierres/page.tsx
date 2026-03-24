@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiFetch, API_URL } from "@/lib/api";
 
 interface Closure {
   id: number;
@@ -22,8 +23,8 @@ export default function CierresPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:3000/api/closures").then(r => r.json()),
-      fetch("http://localhost:3000/api/warehouses").then(r => r.json()),
+      apiFetch<Closure[]>("/api/closures"),
+      apiFetch<any[]>("/api/warehouses"),
     ]).then(([c, w]) => {
       setClosures(c);
       setWarehouses(w);
@@ -34,18 +35,13 @@ export default function CierresPage() {
   const handleCreate = async () => {
     if (!selectedWarehouse) return;
     
-    const token = localStorage.getItem("token");
-    await fetch("http://localhost:3000/api/closures", {
+    await apiFetch("/api/closures", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      },
       body: JSON.stringify({ warehouse_id: parseInt(selectedWarehouse) }),
     });
     
     setShowModal(false);
-    const updated = await fetch("http://localhost:3000/api/closures").then(r => r.json());
+    const updated = await apiFetch<Closure[]>("/api/closures");
     setClosures(updated);
   };
 

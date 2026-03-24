@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch } from "@/lib/api";
 
 export default function NuevoClientePage() {
   const router = useRouter();
@@ -22,17 +23,10 @@ export default function NuevoClientePage() {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:3000/api/customers", {
+      await apiFetch("/api/customers", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify(form),
       });
-
-      if (!res.ok) throw new Error("Error al crear cliente");
       
       router.push("/clientes");
     } catch (err: any) {

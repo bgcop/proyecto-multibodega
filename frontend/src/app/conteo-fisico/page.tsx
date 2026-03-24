@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface PhysicalCount {
   id: number;
@@ -103,6 +104,7 @@ export default function ConteoFisicoPage() {
                 <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Coinciden</th>
                 <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Diferencias</th>
                 <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -121,6 +123,18 @@ export default function ConteoFisicoPage() {
                     }`}>
                       {c.status === 'COMPLETED' ? '✓ Completado' : c.status === 'IN_PROGRESS' ? '⏳ En Proceso' : '✕ Cancelado'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {c.status !== 'COMPLETED' ? (
+                      <Link 
+                        href={`/conteo-fisico/${c.id}/capturar`}
+                        className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        Capturar
+                      </Link>
+                    ) : (
+                      <span className="text-sm text-slate-400">Completado</span>
+                    )}
                   </td>
                 </tr>
               ))}

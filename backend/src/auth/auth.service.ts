@@ -14,11 +14,16 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async signIn(email: string, pass: string): Promise<{ access_token: string }> {
-    const user = await this.userRepository.findOne({ where: { email } });
+  async signIn(email: string, pass: string): Promise<{ access_token: string; user: Partial<User> }> {
+    const user = await this.userRepository.findOne({ where: { email }, relations: ['role'] });
     if (user && await bcrypt.compare(pass, user.passwordHash)) {
       const payload = { email: user.email, sub: user.id, role: user.role?.name };
-      return { access_token: this.jwtService.sign(payload) };
+      // Return user without sensitive data
+      const { passwordHash, ...userWithoutPassword } = user;
+      return { 
+        access_token: this.jwtService.sign(payload),
+        user: userWithoutPassword 
+      };
     }
     throw new UnauthorizedException('Credenciales inválidas');
   }

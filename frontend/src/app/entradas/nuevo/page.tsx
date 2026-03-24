@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { apiFetch, API_URL } from "@/lib/api";
 
 interface Warehouse { id: number; name: string; }
 interface Supplier { id: number; name: string; }
@@ -31,13 +32,13 @@ export default function NuevaEntradaPage() {
 
   useEffect(() => {
     Promise.all([
-      fetch("http://localhost:3000/api/warehouses").then(r => r.json()),
-      fetch("http://localhost:3000/api/suppliers").then(r => r.json()),
-      fetch("http://localhost:3000/api/products?limit=100").then(r => r.json()),
+      apiFetch<Warehouse[]>("/api/warehouses"),
+      apiFetch<Supplier[]>("/api/suppliers"),
+      apiFetch<{ data: Product[] } | Product[]>("/api/products?limit=100"),
     ]).then(([w, s, p]) => {
       setWarehouses(w);
       setSuppliers(s);
-      setProducts(p.data || p);
+      setProducts(Array.isArray(p) ? p : p.data || []);
     });
   }, []);
 
@@ -63,18 +64,13 @@ export default function NuevaEntradaPage() {
     setError("");
 
     try {
-      const token = localStorage.getItem("token");
       const validItems = items.filter(i => i.product_id && i.quantity > 0);
       
       if (!form.warehouse_id) throw new Error("Selecciona una bodega");
       if (validItems.length === 0) throw new Error("Agrega al menos un producto");
 
-      const res = await fetch("http://localhost:3000/api/entries", {
+      await apiFetch("/api/entries", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
         body: JSON.stringify({
           warehouse_id: parseInt(form.warehouse_id),
           supplier_id: form.supplier_id ? parseInt(form.supplier_id) : null,
@@ -82,11 +78,6 @@ export default function NuevaEntradaPage() {
           items: validItems,
         }),
       });
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Error al crear entrada");
-      }
       
       router.push("/entradas");
     } catch (err: any) {

@@ -46,6 +46,12 @@ export default function BodegasPage() {
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                   {w.code}
                 </span>
+                <Link 
+                  href={`/bodegas/${w.id}/editar`}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Editar
+                </Link>
               </div>
               <h3 className="text-lg font-semibold text-slate-800 mb-2">{w.name}</h3>
               {w.address && <p className="text-sm text-slate-500 mb-1">📍 {w.address}</p>}

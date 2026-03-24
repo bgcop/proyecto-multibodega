@@ -2,9 +2,11 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,25 +17,15 @@ export default function LoginPage() {
     setLoading(true);
     setErrorMsg("");
 
-    try {
-      const res = await fetch("http://localhost:3000/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+    const result = await login(email, password);
 
-      if (!res.ok) throw new Error("Credenciales inválidas o servidor inactivo");
-
-      const data = await res.json();
-      // NOTA ARQUITECTURA: Por rapidez de pruebas de Fase 2 usaremos Storage.
-      // En Fase 3 se usara Next middleware para cookies HttpOnly.
-      localStorage.setItem("token", data.access_token);
+    if (result.success) {
       router.push("/");
-    } catch (e: any) {
-      setErrorMsg(e.message);
-    } finally {
-      setLoading(false);
+    } else {
+      setErrorMsg(result.error || "Error al iniciar sesión");
     }
+
+    setLoading(false);
   };
 
   return (

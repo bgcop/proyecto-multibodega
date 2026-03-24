@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { apiFetch } from "@/lib/api";
 
 interface Product { id: number; sku: string; name: string; }
 interface Warehouse { id: number; code: string; name: string; }
@@ -17,16 +18,13 @@ export default function TransferenciasPage() {
   });
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    fetch("http://localhost:3000/api/products?limit=100")
-      .then(res => res.json())
-      .then(data => setProducts(data.data || data))
-      .catch(() => {});
-    
-    fetch("http://localhost:3000/api/warehouses")
-      .then(res => res.json())
-      .then(data => setWarehouses(data))
-      .catch(() => {});
+    Promise.all([
+      apiFetch<{ data: Product[] } | Product[]>("/api/products?limit=100"),
+      apiFetch<Warehouse[]>("/api/warehouses"),
+    ]).then(([pData, wData]) => {
+      setProducts(Array.isArray(pData) ? pData : pData.data || []);
+      setWarehouses(wData);
+    }).catch(() => {});
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -35,20 +33,9 @@ export default function TransferenciasPage() {
     setError("");
     setSuccess("");
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setError("Debes iniciar sesión para realizar transferencias");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const res = await fetch("http://localhost:3000/api/stock-movements/transfer", {
+      const data = await apiFetch<{ transaction_id: number }>("/api/stock-movements/transfer", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: \`Bearer \${token}\`,
-        },
         body: JSON.stringify({
           productId: parseInt(form.productId),
           sourceWarehouseId: parseInt(form.sourceWarehouseId),
@@ -57,11 +44,8 @@ export default function TransferenciasPage() {
           reason: form.reason || "Transferencia entre bodegas",
         }),
       });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Error en transferencia");
       
-      setSuccess(\`✅ Transferencia registrada exitosamente (ID: \${data.transaction_id})\`);
+      setSuccess(`✅ Transferencia registrada exitosamente (ID: ${data.transaction_id})`);
       setForm({ productId: "", sourceWarehouseId: "", targetWarehouseId: "", quantity: "1", reason: "" });
     } catch (err: any) {
       setError(err.message);

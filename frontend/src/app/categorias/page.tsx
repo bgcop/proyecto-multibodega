@@ -43,6 +43,7 @@ export default function CategoriasPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Nombre</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Padre</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Descripción</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -51,6 +52,14 @@ export default function CategoriasPage() {
                   <td className="px-6 py-4 font-medium text-slate-800">{c.name}</td>
                   <td className="px-6 py-4 text-slate-500">{c.parent_category?.name || "-"}</td>
                   <td className="px-6 py-4 text-slate-500 text-sm">{c.description || "-"}</td>
+                  <td className="px-6 py-4 text-center">
+                    <Link 
+                      href={`/categorias/${c.id}/editar`}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Editar
+                    </Link>
+                  </td>
                 </tr>
               ))}
             </tbody>

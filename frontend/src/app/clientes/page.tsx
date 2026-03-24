@@ -47,6 +47,7 @@ export default function ClientesPage() {
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">NIT/RUC</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Contacto</th>
                 <th className="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase">Estado</th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-slate-500 uppercase">Acciones</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -60,6 +61,14 @@ export default function ClientesPage() {
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${c.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
                       {c.is_active ? 'Activo' : 'Inactivo'}
                     </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <Link 
+                      href={`/clientes/${c.id}/editar`}
+                      className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Editar
+                    </Link>
                   </td>
                 </tr>
               ))}

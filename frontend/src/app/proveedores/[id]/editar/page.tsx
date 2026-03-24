@@ -1,11 +1,14 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useParams } from "next/navigation";
 import { apiFetch } from "@/lib/api";
 
-export default function NuevoProveedorPage() {
+export default function EditarProveedorPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params.id as string;
+
   const [form, setForm] = useState({
     code: "",
     name: "",
@@ -16,7 +19,28 @@ export default function NuevoProveedorPage() {
     address: ""
   });
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(true);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    apiFetch(`/api/suppliers/${id}`)
+      .then(data => {
+        setForm({
+          code: data.code || "",
+          name: data.name || "",
+          tax_id: data.tax_id || "",
+          contact_name: data.contact_name || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          address: data.address || ""
+        });
+        setLoadingData(false);
+      })
+      .catch(() => {
+        setError("Error al cargar proveedor");
+        setLoadingData(false);
+      });
+  }, [id]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,8 +48,8 @@ export default function NuevoProveedorPage() {
     setError("");
 
     try {
-      await apiFetch("/api/suppliers", {
-        method: "POST",
+      await apiFetch(`/api/suppliers/${id}`, {
+        method: "PUT",
         body: JSON.stringify(form),
       });
       
@@ -37,9 +61,24 @@ export default function NuevoProveedorPage() {
     }
   };
 
+  if (loadingData) {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-slate-200 rounded w-1/3 mb-6"></div>
+          <div className="bg-white rounded-xl p-6 space-y-4">
+            <div className="h-10 bg-slate-200 rounded"></div>
+            <div className="h-10 bg-slate-200 rounded"></div>
+            <div className="h-20 bg-slate-200 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-2xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold text-slate-800">Nuevo Proveedor</h1>
+      <h1 className="text-2xl font-bold text-slate-800">Editar Proveedor</h1>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4">
         {error && (
@@ -136,7 +175,7 @@ export default function NuevoProveedorPage() {
             Cancelar
           </button>
           <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-            {loading ? "Guardando..." : "Guardar Proveedor"}
+            {loading ? "Guardando..." : "Guardar Cambios"}
           </button>
         </div>
       </form>
