@@ -1,4 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { StockMovement } from './stock-movement.entity';
 
 @Entity('warehouses')
 export class Warehouse {
@@ -14,12 +15,15 @@ export class Warehouse {
   @Column({ nullable: true })
   address: string;
 
-  @Column({ nullable: true })
-  manager: string;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
 
-  @CreateDateColumn()
-  created_at: Date;
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
-  @UpdateDateColumn()
-  updated_at: Date;
+  @OneToMany(() => StockMovement, stockMovement => stockMovement.sourceWarehouse)
+  sourceMovements: StockMovement[];
+
+  @OneToMany(() => StockMovement, stockMovement => stockMovement.targetWarehouse)
+  targetMovements: StockMovement[];
 }

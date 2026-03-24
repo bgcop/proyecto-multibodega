@@ -1,20 +1,29 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToMany, JoinColumn } from 'typeorm';
 
 @Entity('categories')
 export class Category {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ unique: true })
+  @Column()
   name: string;
 
   @Column({ nullable: true })
   description: string;
 
-  @ManyToOne(() => Category, (category) => category.subcategories, { nullable: true, onDelete: 'SET NULL' })
-  @JoinColumn({ name: 'parent_id' })
-  parent_category: Category;
+  @Column({ name: 'parent_id', nullable: true })
+  parentId: number;
 
-  @OneToMany(() => Category, (category) => category.parent_category)
-  subcategories: Category[];
+  @ManyToOne(() => Category, category => category.children, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'parent_id' })
+  parent: Category;
+
+  @OneToMany(() => Category, category => category.parent)
+  children: Category[];
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 }

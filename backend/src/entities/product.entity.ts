@@ -1,5 +1,6 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
 import { Category } from './category.entity';
+import { StockMovement } from './stock-movement.entity';
 
 @Entity('products')
 export class Product {
@@ -12,22 +13,31 @@ export class Product {
   @Column()
   name: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ nullable: true })
   description: string;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2 })
+  @Column('decimal', { precision: 10, scale: 2 })
   price: number;
 
-  @Column({ default: 0 })
-  min_stock: number;
+  @Column({ name: 'image_url', nullable: true })
+  imageUrl: string;
 
-  @Column({ nullable: true })
-  image_url: string;
+  @Column({ name: 'min_stock', type: 'int', default: 0 })
+  minStock: number;
 
-  @ManyToOne(() => Category, { nullable: true })
+  @Column({ name: 'category_id', nullable: true })
+  categoryId: number;
+
+  @ManyToOne(() => Category, category => category.children, { onDelete: 'SET NULL' })
   @JoinColumn({ name: 'category_id' })
   category: Category;
 
-  @CreateDateColumn()
-  created_at: Date;
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
+
+  @OneToMany(() => StockMovement, stockMovement => stockMovement.product)
+  stockMovements: StockMovement[];
 }

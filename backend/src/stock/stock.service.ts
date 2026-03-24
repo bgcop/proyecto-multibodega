@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { StockMovement, MovementType } from '../entities/stock-movement.entity';
+import { StockMovement, StockMovementType } from '../entities/stock-movement.entity';
 import { Product } from '../entities/product.entity';
 import { Warehouse } from '../entities/warehouse.entity';
 
@@ -14,14 +14,14 @@ export class StockService {
   async getStock(productId: number, warehouseId: number): Promise<number> {
     const movements = await this.dataSource.manager.find(StockMovement, {
        where: [
-         { product: { id: productId }, source_warehouse: { id: warehouseId } },
-         { product: { id: productId }, target_warehouse: { id: warehouseId } }
+         { product: { id: productId }, sourceWarehouse: { id: warehouseId } },
+         { product: { id: productId }, targetWarehouse: { id: warehouseId } }
        ]
     });
     
     return movements.reduce((acc, mov) => {
-       if (mov.target_warehouse?.id === warehouseId) return acc + mov.quantity;
-       if (mov.source_warehouse?.id === warehouseId) return acc - mov.quantity;
+       if (mov.targetWarehouse?.id === warehouseId) return acc + mov.quantity;
+       if (mov.sourceWarehouse?.id === warehouseId) return acc - mov.quantity;
        return acc;
     }, 0);
   }
@@ -53,12 +53,12 @@ export class StockService {
 
       // 3. Crear Movimiento de Bodega. Una transferencia es un unico Registro que señala su origen y destino
       const movement = new StockMovement();
-      movement.type = MovementType.TRANSFER;
+      movement.type = StockMovementType.TRANSFER;
       movement.quantity = qty;
       movement.reason = reason || 'Transferencia Inter-Bodega';
       movement.product = product;
-      movement.source_warehouse = sourceWH;
-      movement.target_warehouse = targetWH;
+      movement.sourceWarehouse = sourceWH;
+      movement.targetWarehouse = targetWH;
       
       const result = await queryRunner.manager.save(movement);
       
