@@ -91,7 +91,7 @@ export default function TransfersPage() {
 
             <div className="space-y-2">
               <Label>Bodega de Origen</Label>
-              <Select value={originWH} onValueChange={setOriginWH} required>
+              <Select value={originWH} onValueChange={(val) => setOriginWH(val || '')} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione Origen" />
                 </SelectTrigger>
@@ -105,7 +105,7 @@ export default function TransfersPage() {
 
             <div className="space-y-2">
               <Label>Bodega Destino</Label>
-              <Select value={targetWH} onValueChange={setTargetWH} required>
+              <Select value={targetWH} onValueChange={(val) => setTargetWH(val || '')} required>
                 <SelectTrigger>
                   <SelectValue placeholder="Seleccione Destino" />
                 </SelectTrigger>
