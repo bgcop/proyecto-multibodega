@@ -7,6 +7,10 @@ import { StockModule } from './stock/stock.module';
 import { UnitsModule } from './units/units.module';
 import { CustomersModule } from './customers/customers.module';
 import { SuppliersModule } from './suppliers/suppliers.module';
+import { EntriesModule } from './entries/entries.module';
+import { ExitsModule } from './exits/exits.module';
+import { PhysicalCountModule } from './physical-count/physical-count.module';
+import { ClosuresModule } from './closures/closures.module';
 
 @Module({
   imports: [
@@ -25,6 +29,10 @@ import { SuppliersModule } from './suppliers/suppliers.module';
     UnitsModule,
     CustomersModule,
     SuppliersModule,
+    EntriesModule,
+    ExitsModule,
+    PhysicalCountModule,
+    ClosuresModule,
   ],
   controllers: [AppController],
   providers: [AppService],
