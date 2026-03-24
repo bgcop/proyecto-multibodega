@@ -17,10 +17,10 @@ export default function RootLayout({
   return (
     <html lang="es">
       <body className={`${inter.className} bg-slate-50 text-slate-900 antialiased`}>
-        <div className="flex h-screen overflow-hidden">
+        <div className="flex flex-col md:flex-row h-screen overflow-hidden">
           
           {/* Navegación Lateral */}
-          <aside className="w-64 bg-white border-r border-slate-200 shadow-sm flex flex-col">
+          <aside className="w-full md:w-64 bg-white border-b md:border-b-0 md:border-r border-slate-200 shadow-sm flex flex-col">
             <div className="h-16 flex items-center px-6 border-b border-slate-100">
               <span className="text-xl font-bold tracking-tight text-blue-600">Bodegas</span>
               <span className="text-xl font-bold tracking-tight text-slate-800 ml-1">Core</span>
@@ -58,12 +58,12 @@ export default function RootLayout({
 
           {/* Area Principal */}
           <main className="flex-1 flex flex-col overflow-y-auto">
-            <header className="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center px-8 justify-between">
+            <header className="h-16 bg-white border-b border-slate-200 shadow-sm flex items-center px-4 md:px-8 justify-between">
               <h2 className="text-xl font-semibold text-slate-800">Visión General</h2>
-              <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-md shadow-sm transition-all">Nueva Transferencia</button>
+              <button className="btn-primary text-sm font-medium">Nueva Transferencia</button>
             </header>
             
-            <div className="p-8">
+            <div className="p-4 md:p-8">
               {children}
             </div>
           </main>
