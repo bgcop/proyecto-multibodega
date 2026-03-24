@@ -28,9 +28,9 @@ export class Product {
   @Column({ name: 'category_id', nullable: true })
   categoryId: number;
 
-  @ManyToOne(() => Category, category => category.children, { onDelete: 'SET NULL' })
+  @ManyToOne(() => Category, category => category.children, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({ name: 'category_id' })
-  category: Category;
+  category: Category | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

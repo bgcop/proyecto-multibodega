@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from '../entities/user.entity';
-import { Role } from '../entities/role.entity';
+import { Role, RoleName } from '../entities/role.entity';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 
@@ -16,7 +16,7 @@ export class AuthService {
 
   async signIn(email: string, pass: string): Promise<{ access_token: string }> {
     const user = await this.userRepository.findOne({ where: { email } });
-    if (user && await bcrypt.compare(pass, user.password_hash)) {
+    if (user && await bcrypt.compare(pass, user.passwordHash)) {
       const payload = { email: user.email, sub: user.id, role: user.role?.name };
       return { access_token: this.jwtService.sign(payload) };
     }
@@ -25,9 +25,9 @@ export class AuthService {
 
   // Base utilitaria para crear admin inicial
   async seedAdmin() {
-    let role = await this.roleRepository.findOne({ where: { name: 'admin' } });
+    let role = await this.roleRepository.findOne({ where: { name: RoleName.ADMIN } });
     if (!role) {
-      role = this.roleRepository.create({ name: 'admin', permissions: { all: true } });
+      role = this.roleRepository.create({ name: RoleName.ADMIN, permissions: ['all'] });
       await this.roleRepository.save(role);
     }
     
@@ -35,7 +35,7 @@ export class AuthService {
     const exist = await this.userRepository.findOne({ where: { email: 'admin@sistema.local' }});
     if (!exist) {
       const hash = await bcrypt.hash('admin123', 10);
-      const newAdmin = this.userRepository.create({ email: 'admin@sistema.local', name: 'Administrador', password_hash: hash, role });
+      const newAdmin = this.userRepository.create({ email: 'admin@sistema.local', name: 'Administrador', passwordHash: hash, role });
       await this.userRepository.save(newAdmin);
       return { status: 'Admin Seeded' };
     }

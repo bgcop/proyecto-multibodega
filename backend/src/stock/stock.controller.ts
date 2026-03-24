@@ -9,7 +9,7 @@ export class StockController {
   constructor(private readonly stockService: StockService) {}
 
   @Post('transfer')
-  async transferStock(@Body() transferDto: TransferDto, @Req() req) {
+  async transferStock(@Body() transferDto: TransferDto, @Req() req: any) {
     // Si queremos restringir roles: if (req.user.role.name === 'viewer') throw ForbiddenException()
     try {
       return await this.stockService.executeTransfer(

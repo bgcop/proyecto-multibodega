@@ -14,28 +14,15 @@ import { Category } from './entities/category.entity';
 import { Warehouse } from './entities/warehouse.entity';
 import { Product } from './entities/product.entity';
 import { StockMovement } from './entities/stock-movement.entity';
-import { ProductsModule } from './products/products.module';
-import { WarehousesModule } from './warehouses/warehouses.module';
-import { CategoriesModule } from './categories/categories.module';
 
 @Module({
   imports: [
-    StockModule,
-    AuthModule,
-    CategoriesModule,
-    WarehousesModule,
-    ProductsModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
-      imports: [
-    StockModule,
-    AuthModule,
-    CategoriesModule,
-    WarehousesModule,
-    ProductsModule,ConfigModule],
+      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',
@@ -49,9 +36,11 @@ import { CategoriesModule } from './categories/categories.module';
         logging: true,
       }),
     }),
-    ProductsModule,
-    WarehousesModule,
+    AuthModule,
     CategoriesModule,
+    WarehousesModule,
+    ProductsModule,
+    StockModule,
   ],
   controllers: [AppController],
   providers: [AppService],

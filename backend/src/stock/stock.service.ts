@@ -29,7 +29,7 @@ export class StockService {
   /**
    * Ejecución ACID (PostgreSQL Query Runner) para Transferencia.
    */
-  async executeTransfer(productId: number, sourceId: number, targetId: number, qty: number, reason: string, userId?: number) {
+  async executeTransfer(productId: number, sourceId: number, targetId: number, qty: number, reason: string, userId: number) {
     if (qty <= 0) throw new BadRequestException("La cantidad debe ser mayor a 0");
     if (sourceId === targetId) throw new BadRequestException("No puedes transferir a la misma bodega");
 
@@ -55,7 +55,7 @@ export class StockService {
       const movement = new StockMovement();
       movement.type = StockMovementType.TRANSFER;
       movement.quantity = qty;
-      movement.user_id = userId;
+      movement.userId = userId;
       movement.reason = reason || 'Transferencia Inter-Bodega';
       movement.product = product;
       movement.sourceWarehouse = sourceWH;
