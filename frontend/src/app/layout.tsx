@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "sonner";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -10,9 +11,11 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({
-  children,
+  children}
+              <Toaster position="bottom-right" richColors />,
 }: Readonly<{
-  children: React.ReactNode;
+  children}
+              <Toaster position="bottom-right" richColors />: React.ReactNode;
 }>) {
   return (
     <html lang="es">
@@ -65,6 +68,7 @@ export default function RootLayout({
             
             <div className="p-4 md:p-8">
               {children}
+              <Toaster position="bottom-right" richColors />}
             </div>
           </main>
 
