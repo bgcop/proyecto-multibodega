@@ -1,0 +1,135 @@
+export default function Dashboard() {
+  return (
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        
+        {/* KPI Cards usando Skill UI */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">Total Movimientos (Hoy)</p>
+              <h3 className="text-3xl font-bold text-slate-800">2,408</h3>
+            </div>
+            <div className="p-2 bg-green-50 text-green-600 rounded-lg">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" /></svg>
+            </div>
+          </div>
+          <p className="text-xs text-green-600 font-medium mt-4 flex items-center">
+            +14% <span className="text-slate-400 ml-1 font-normal">vs ayer</span>
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col justify-between hover:shadow-md transition-shadow">
+          <div className="flex justify-between items-start">
+            <div>
+              <p className="text-sm font-medium text-slate-500 mb-1">Stock Valorizado</p>
+              <h3 className="text-3xl font-bold text-slate-800">$142,300</h3>
+            </div>
+             <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
+               <span className="font-bold text-lg">$</span>
+            </div>
+          </div>
+          <p className="text-xs text-slate-500 font-normal mt-4 flex items-center">
+            En base al último costeo
+          </p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-red-200 p-6 flex flex-col justify-between hover:shadow-md transition-shadow relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-16 h-16 bg-red-50 rounded-bl-full -z-1"></div>
+          <div className="flex justify-between items-start relative z-10">
+            <div>
+              <p className="text-sm font-medium text-red-600 mb-1">Alerta: Quiebre de Stock</p>
+              <h3 className="text-3xl font-bold text-slate-800">12</h3>
+            </div>
+             <div className="p-2 bg-red-100 text-red-600 rounded-lg animate-pulse">
+               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+            </div>
+          </div>
+          <p className="text-xs text-red-500 font-medium mt-4">
+            Items por debajo del mínimo (min_stock)
+          </p>
+        </div>
+
+      </div>
+
+      {/* Grid Principal Inferior */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Tabla Lista */}
+        <div className="col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-slate-800">Últimos Movimientos Multibodega</h3>
+            <span className="text-sm text-blue-600 font-medium cursor-pointer hover:underline">Ver Reporte completo &rarr;</span>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-slate-50 text-slate-500 text-sm uppercase tracking-wider">
+                  <th className="px-6 py-3 font-medium border-b border-slate-200">Producto</th>
+                  <th className="px-6 py-3 font-medium border-b border-slate-200">Tipo</th>
+                  <th className="px-6 py-3 font-medium border-b border-slate-200 text-right">Origen/Destino</th>
+                  <th className="px-6 py-3 font-medium border-b border-slate-200 text-center">Qty</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-sm">
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-800">Ryzen 9 5900X (SKU-891)</td>
+                  <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">TRANSFER</span></td>
+                  <td className="px-6 py-4 text-slate-500 text-right">Central &rarr; Sucursal Norte</td>
+                  <td className="px-6 py-4 text-center font-bold text-slate-700">15</td>
+                </tr>
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-800">Monitor LG 27" (SKU-102)</td>
+                  <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">OUT</span></td>
+                  <td className="px-6 py-4 text-slate-500 text-right">Venta Mayorista</td>
+                  <td className="px-6 py-4 text-center font-bold text-red-600">-50</td>
+                </tr>
+                <tr className="hover:bg-slate-50 transition-colors">
+                  <td className="px-6 py-4 font-medium text-slate-800">Teclado Mecánico Keychron</td>
+                  <td className="px-6 py-4"><span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">IN</span></td>
+                  <td className="px-6 py-4 text-slate-500 text-right">Proveedor Tech SA</td>
+                  <td className="px-6 py-4 text-center font-bold text-green-600">+120</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Breakdown Lateral */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
+          <h3 className="text-lg font-semibold text-slate-800 mb-4">Stock por Bodega</h3>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between items-end mb-1">
+                <span className="text-sm font-medium text-slate-700">Central (La Paz)</span>
+                <span className="text-sm font-bold text-slate-900">4,500 <span className="font-normal text-slate-400">ítems</span></span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2">
+                <div className="bg-blue-600 h-2 rounded-full" style={{width: '75%'}}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-1">
+                <span className="text-sm font-medium text-slate-700">Sucursal Norte</span>
+                <span className="text-sm font-bold text-slate-900">1,200 <span className="font-normal text-slate-400">ítems</span></span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2">
+                <div className="bg-blue-400 h-2 rounded-full" style={{width: '45%'}}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-1">
+                <span className="text-sm font-medium text-slate-700">Depósito Emergencias</span>
+                <span className="text-sm font-bold text-slate-900">200 <span className="font-normal text-slate-400">ítems</span></span>
+              </div>
+              <div className="w-full bg-slate-100 rounded-full h-2">
+                <div className="bg-slate-400 h-2 rounded-full" style={{width: '15%'}}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}
