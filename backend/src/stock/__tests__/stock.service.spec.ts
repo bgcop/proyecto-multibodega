@@ -43,10 +43,10 @@ describe('StockService (Isolation Unit)', () => {
     // Override de GetStock para fingir un falso (hay solo 5 y pido 20)
     jest.spyOn(service, 'getStock').mockResolvedValue(5); 
 
-    await expect(service.executeTransfer(1, 1, 2, 20, 'Venta')).rejects.toThrow('Stock insuficiente');
+    await expect(service.executeTransfer(1, 1, 2, 20, 'Venta', 1)).rejects.toThrow('Stock insuficiente');
   });
 
   it('debe abortar transferencia hacia si misma (Bucle bodegas)', async () => {
-    await expect(service.executeTransfer(1, 4, 4, 10, 'Error')).rejects.toThrow(BadRequestException);
+    await expect(service.executeTransfer(1, 4, 4, 10, 'Error', 1)).rejects.toThrow(BadRequestException);
   });
 });

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
+import { AuthModule } from './auth/auth.module';
 import { StockModule } from './stock/stock.module';
 import { AppService } from './app.service';
 import { User } from './entities/user.entity';
@@ -14,13 +15,15 @@ import { StockMovement } from './entities/stock-movement.entity';
 @Module({
   imports: [
     StockModule,
+    AuthModule,
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
       imports: [
-    StockModule,ConfigModule],
+    StockModule,
+    AuthModule,ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         type: 'postgres',

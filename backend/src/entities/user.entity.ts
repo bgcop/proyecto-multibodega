@@ -1,6 +1,5 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, CreateDateColumn } from 'typeorm';
 import { Role } from './role.entity';
-import { StockMovement } from './stock-movement.entity';
 
 @Entity('users')
 export class User {
@@ -10,22 +9,16 @@ export class User {
   @Column({ unique: true })
   email: string;
 
-  @Column({ name: 'password_hash' })
-  passwordHash: string;
+  @Column()
+  password_hash: string;
 
-  @Column({ name: 'role_id' })
-  roleId: number;
+  @Column()
+  name: string;
 
-  @ManyToOne(() => Role, role => role.users, { onDelete: 'RESTRICT' })
+  @ManyToOne(() => Role, { eager: true })
   @JoinColumn({ name: 'role_id' })
   role: Role;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt: Date;
-
-  @UpdateDateColumn({ name: 'updated_at' })
-  updatedAt: Date;
-
-  @OneToMany(() => StockMovement, stockMovement => stockMovement.user)
-  stockMovements: StockMovement[];
+  @CreateDateColumn()
+  created_at: Date;
 }
